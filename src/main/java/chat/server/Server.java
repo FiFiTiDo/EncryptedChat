@@ -1,6 +1,6 @@
-package chat.server;
+package main.java.chat.server;
 
-import chat.encryption.Encryptor;
+import main.java.chat.encryption.Encryptor;
 
 import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;

@@ -1,6 +1,6 @@
-package chat.client;
+package main.java.chat.client;
 
-import chat.encryption.Encryptor;
+import main.java.chat.encryption.Encryptor;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;

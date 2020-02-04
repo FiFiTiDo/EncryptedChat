@@ -1,4 +1,4 @@
-package chat.encryption;
+package main.java.chat.encryption;
 
 import javax.crypto.*;
 import java.io.File;
