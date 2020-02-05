@@ -6,4 +6,4 @@ server/build
 client/out
 client/build
 util/out
-util/buildgi
+util/build
