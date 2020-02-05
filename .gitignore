@@ -1,4 +1,9 @@
 SECRET_KEY
-output
 .idea
-nbproject
+.gradle
+server/out
+server/build
+client/out
+client/build
+util/out
+util/build
