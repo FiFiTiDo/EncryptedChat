@@ -6,6 +6,7 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
@@ -93,9 +94,6 @@ class ClientHandler extends Thread {
                 is.readFully(message, 0, message.length); // read the message
 
                 this.onMessageListener.onMessage(encryptor.decrypt(message), this);
-            } catch (BadPaddingException | IllegalBlockSizeException e) {
-                e.printStackTrace();
-                return;
             } catch (SocketException e) {
                 if (e.getMessage().equals("Connection reset")) {
                     System.out.println("Client " + id.toString() + " disconnected.");
@@ -103,7 +101,9 @@ class ClientHandler extends Thread {
                     e.printStackTrace();
                 }
                 return;
-            } catch (IOException e) {
+            } catch (EOFException e) {
+                System.out.println("Client " + id.toString() + " disconnected.");
+            } catch (BadPaddingException | IllegalBlockSizeException | IOException e) {
                 e.printStackTrace();
                 return;
             }

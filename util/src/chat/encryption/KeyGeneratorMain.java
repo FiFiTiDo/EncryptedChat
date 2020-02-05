@@ -10,7 +10,7 @@ import java.security.NoSuchAlgorithmException;
 
 public class KeyGeneratorMain {
     public static void main(String[] args) throws NoSuchAlgorithmException, IOException {
-        KeyGenerator keygenerator = KeyGenerator.getInstance("DES/ECB/PKCS5Padding");
+        KeyGenerator keygenerator = KeyGenerator.getInstance("DES");
         SecretKey key = keygenerator.generateKey();
 
         File file = new File("SECRET_KEY");
