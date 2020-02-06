@@ -85,31 +85,41 @@ public class ThreadedSocket extends Thread {
     @Override
     public void run() {
         while (!this.isInterrupted() && socket.isConnected()) {
+            byte[] raw;
             try {
                 int length = is.readInt(); // read length of incoming message
 
                 if (length <= 0) continue;
 
-                byte[] raw = new byte[length];
+                raw = new byte[length];
                 is.readFully(raw, 0, raw.length); // read the message
-
-                Message msg = gson.fromJson(encryptor.decrypt(raw), Message.class);
-                this.onMessageListener.onMessage(msg, this);
             } catch (SocketException e) {
                 if (e.getMessage().equals("Connection reset")) {
                     this.disconnect();
+                    this.onDisconnectListener.onDisconnect(this);
+                } else if (e.getMessage().equals("Socket closed")) {
                     this.onDisconnectListener.onDisconnect(this);
                 } else {
                     e.printStackTrace();
                 }
                 return;
-            } catch (EOFException e) {
+            } catch (EOFException | NullPointerException e) {
                 this.disconnect();
                 this.onDisconnectListener.onDisconnect(this);
-            } catch (BadPaddingException | IllegalBlockSizeException | IOException e) {
+                return;
+            } catch (IOException e) {
                 e.printStackTrace();
                 return;
             }
+
+            Message msg;
+            try {
+                msg = gson.fromJson(encryptor.decrypt(raw), Message.class);
+            } catch (BadPaddingException | IllegalBlockSizeException e) {
+                e.printStackTrace();
+                return;
+            }
+            this.onMessageListener.onMessage(msg, this);
         }
     }
 
