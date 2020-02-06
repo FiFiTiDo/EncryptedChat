@@ -10,6 +10,7 @@ plugins {
     id "java"
     id "application"
     id 'org.openjfx.javafxplugin' version '0.0.8' apply false
+    id('io.ebean') version '12.1.10' apply false
 }
 allprojects {
     repositories {
@@ -18,8 +19,8 @@ allprojects {
     }
 }
 
-sourceCompatibility = 12
-targetCompatibility = 12
+sourceCompatibility = 13
+targetCompatibility = 13
 
 subprojects {
     version = '0.1.2'
@@ -35,8 +36,13 @@ subprojects {
     }
 }
 
+// Apply subproject-specific plugins and settings
 subprojects { subproject ->
     if (subproject.name == "client") {
         apply plugin: "org.openjfx.javafxplugin"
+    } else if (subproject.name == "server") {
+        apply plugin: 'io.ebean'
+    } else if (subproject.name == "util") {
+
     }
 }

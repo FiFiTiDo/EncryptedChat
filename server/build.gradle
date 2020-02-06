@@ -18,6 +18,10 @@ sourceSets {
 
 dependencies {
     compile project(':util')
+    compile 'io.ebean:ebean:12.1.10'
+    compile 'io.ebean:ebean-querybean:12.1.10'
+    annotationProcessor 'io.ebean:querybean-generator:12.1.10'
+    testCompile 'io.ebean:ebean-test:12.1.10'
 }
 
 jar {
