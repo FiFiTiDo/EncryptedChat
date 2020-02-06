@@ -12,7 +12,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Scanner;
 
-class Client implements Runnable {
+public class Client implements Runnable {
     private ThreadedSocket socket;
     private volatile boolean connected = false;
 
@@ -38,7 +38,7 @@ class Client implements Runnable {
         }
     }
 
-    void disconnect() {
+    public void disconnect() {
         this.connected = false;
         socket.disconnect();
     }
