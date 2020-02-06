@@ -6,16 +6,23 @@
  * User Manual available at https://docs.gradle.org/6.1.1/userguide/tutorial_java_projects.html
  */
 
+plugins {
+    id "java"
+    id "application"
+    id 'org.openjfx.javafxplugin' version '0.0.8' apply false
+}
 allprojects {
     repositories {
-        // Use jcenter for resolving dependencies.
-        // You can declare any Maven/Ivy/file repository here.
         jcenter()
+        mavenCentral()
     }
 }
 
+sourceCompatibility = 12
+targetCompatibility = 12
+
 subprojects {
-    version = '0.1.1'
+    version = '0.1.2'
     apply plugin: "java"
     apply plugin: "application"
 
@@ -25,5 +32,11 @@ subprojects {
 
         // Use JUnit test framework
         testImplementation 'junit:junit:4.12'
+    }
+}
+
+subprojects { subproject ->
+    if (subproject.name == "client") {
+        apply plugin: "org.openjfx.javafxplugin"
     }
 }

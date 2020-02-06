@@ -4,6 +4,7 @@ import chat.encryption.Encryptor;
 import chat.messages.Message;
 import chat.messages.TextMessage;
 import chat.socket.ThreadedSocket;
+import javafx.application.Platform;
 
 import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
@@ -37,23 +38,31 @@ class Client implements Runnable {
         }
     }
 
+    void disconnect() {
+        this.connected = false;
+        socket.disconnect();
+    }
+
     @Override
     public void run() {
         socket.start();
-        connected = true;
 
-        Scanner scanner = new Scanner(System.in);
-        while (connected) {
-            String line = scanner.nextLine();
-            try {
-                this.socket.sendMessage(line);
-            } catch (Exception e) {
-                e.printStackTrace();
-                System.out.flush();
-                break;
+        new Thread(() -> {
+            connected = true;
+
+            Scanner scanner = new Scanner(System.in);
+            while (connected) {
+                String line = scanner.nextLine();
+                try {
+                    this.socket.sendMessage(line);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    System.out.flush();
+                    break;
+                }
             }
-        }
-        System.out.println("Exiting program...");
-        System.exit(1);
+            System.out.println("Exiting program...");
+            Platform.exit();
+        });
     }
 }

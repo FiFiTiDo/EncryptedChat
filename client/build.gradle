@@ -20,6 +20,12 @@ dependencies {
     compile project(':util')
 }
 
+
+javafx {
+    version = "13"
+    modules = [ 'javafx.controls', 'javafx.fxml']
+}
+
 jar {
     // Will include every single one of your dependencies, project or not
     from {
