@@ -21,11 +21,11 @@ sourceSets {
 }
 
 jar {
-    // Will include every single one of your dependencies, project or not
-    from {
-        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
-    }
     manifest {
         attributes 'Main-Class': 'chat.encryption.KeyGeneratorMain'
     }
+}
+
+run {
+    workingDir file("../").getAbsolutePath()
 }

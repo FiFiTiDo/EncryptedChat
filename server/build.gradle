@@ -25,11 +25,11 @@ dependencies {
 }
 
 jar {
-    // Will include every single one of your dependencies, project or not
-    from {
-        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
-    }
     manifest {
         attributes 'Main-Class': 'chat.server.ServerMain'
     }
+}
+
+run {
+    workingDir file("../").getAbsolutePath()
 }
