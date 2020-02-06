@@ -1,5 +1,9 @@
 mainClassName = 'chat.encryption.KeyGeneratorMain'
 
+dependencies {
+    compile group: 'com.google.code.gson', name: 'gson', version: '2.7'
+}
+
 sourceSets {
     main {
         java {
