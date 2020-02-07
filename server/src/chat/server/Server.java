@@ -17,8 +17,8 @@ import java.net.Socket;
 import java.util.*;
 
 class Server {
-    private ServerSocket socket;
     private final List<ClientHandler> clients;
+    private ServerSocket socket;
     private CryptoManager cryptoManager;
     private ServerConfig config;
 

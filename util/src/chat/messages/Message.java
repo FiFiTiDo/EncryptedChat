@@ -6,7 +6,8 @@ public class Message {
     private String command;
     private Map<String, String> data;
 
-    Message() {}
+    Message() {
+    }
 
     Message(String command, Map<String, String> data) {
         this.command = command;

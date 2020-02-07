@@ -10,7 +10,7 @@ public class TextMessage extends Message {
     public static final String DATA_RAW_TEXT = "raw_text";
 
     public TextMessage(String channel, String text) {
-        super(COMMAND, new HashMap<String, String>() {{
+        super(COMMAND, new HashMap<>() {{
             put(DATA_CHANNEL, channel);
             put(DATA_RAW_TEXT, text);
         }});

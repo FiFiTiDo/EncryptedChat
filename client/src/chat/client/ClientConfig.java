@@ -1,6 +1,6 @@
 package chat.client;
 
-public class ClientConfig {
+class ClientConfig {
     private String host;
     private int post;
 

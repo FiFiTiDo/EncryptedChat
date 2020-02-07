@@ -19,7 +19,7 @@ public class GuiApplication extends Application {
     }
 
     @Override
-    public void stop() throws Exception {
+    public void stop() {
         ClientMain.client.disconnect();
     }
 }

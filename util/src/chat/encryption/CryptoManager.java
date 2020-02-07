@@ -1,12 +1,10 @@
 package chat.encryption;
 
-import javax.crypto.*;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 
 public class CryptoManager {
     private Cipher encrypt;
