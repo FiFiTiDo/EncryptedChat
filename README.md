@@ -1,4 +1,22 @@
 # Encrypted Chat
+
+### Table of Contents
+* [About the Project](#About-the-Project)
+* [Getting Started](#Getting-Started)
+    * [Prerequisites](#Prerequisites)
+    * [Configuration](#Configuration)
+    * [Installing](#Installing)
+* [Structure](#Structure)
+    * [Multi-threading](#Multi-threading)
+    * [Encryption](#Encryption)
+    * [Networking](#Networking)
+        * [Messages](#Messages)
+    * [Graphical User Interface](#Graphical-User-Interface)
+    * [Database](#Database)
+* [Authors](#Authors)
+* [License](#License)
+
+## About the Project
 This is a very simple chat system that uses a server that multiple clients can connect to.
 All data transferred between the server and clients is encrypted using the DES algorithm.
 
@@ -10,14 +28,82 @@ is a skeleton available for sending authentication messages.
 The program also is currently commandline-only though it's set up for creating a GUI aspect,
 see [Graphical User Interface](#Graphical-User-Interface).
 
+## Getting Started
+
+### Prerequisites
+* [Java JDK 13](https://jdk.java.net/13/)
+* [Gradle 6.1.1](https://gradle.org/install/)
+* JavaFX 13 (Will be downloaded by Gradle)
+
+I recommend using [SDKMAN!](https://sdkman.io/) for installing and managing the JDK and Gradle versions.
+It greatly simplifies the installation process and handling different versions.
+
+```
+sdk install java 13.0.2.hs-adpt
+sdk install gradle 6.1.1
+```
+
+### Configuration
+Both the client and the server require a _SECRET_KEY_ and _config.yml_ files to be able to run.
+The _config.yml_ file will be provided in the distribution zip but the _SECRET_KEY_ needs to be
+given to you by the server owner or generated using the _util_ sub-project which has a main
+method to generate a key file.
+
+On Windows run `gradlew util:run`
+<br>
+On Linux run `./gradlew util:run`
+
+This will generate a key file in the project directory. This file will need to be placed in the
+working directory when you run the client/server.
+
+To find out the current working directory:
+* On Windows run `cd`
+* On Linux run `pwd`
+
+### Installing
+You can build individual distribution zips for each of the sub-projects. A distribution zip
+contains all of the required libraries, default configuration files, and a script to run the
+program.
+
+The scripts are contained in the `bin` directory.
+<br>
+The config files are in the root directory.
+<br>
+The libraries are contained in the `lib` directory.
+
+To compile a distribution zip:
+* On Windows `gradlew <subproject>:distZip`
+* Onm Linux `./gradlew <subproject>:distZip`
+
+You can find the zip file in the sub-project's build directory `<subproject>/build/distributions`
+<br>
+You can then extract it and run `bin/<subproject>` to start the project.
+
+Example:
+```
+~/EncryptedChat> ./gradlew client:distZip
+...
+
+BUILD SUCCESSFUL in 10s
+8 actionable tasks: 8 executes
+~/EncryptedChat> cd client/build/distributions
+~/EncryptedChat/client/build/distributions> unzip client-0.1.2.zip
+...
+~/EncryptedChat/client/build/distributions>bin/client
+```
+
+__If desired you can also run the sub-projects without compiling into a distribution zip__
+__but I recommend not using the built in gradle run tasks as it can be glitchy due to the__
+__infinite loops that the project uses. Use your IDE's built in main method run functionality instead.__
+
 ## Structure
-The program is divided into three separate sub-programs
+The project is divided into three separate sub-project
 
 * _util_ - contains all of the utility classes used by both the client and server
 * _server_ - The server code that facilitates communication between clients
 * _client_ - The client code that connects to the server
 
-### Multi-threading
+### Multi threading
 Within the util subprogram there exists `chat.socket.ThreadedSocket` this is used by
 both the client and server to prevent the need to reuse code. This class is what handles
 all of the socket communication, including encoding/decoding and converting to/from json.
@@ -32,7 +118,7 @@ between the server and clients. It uses the built-in Java Cryptography Extension
 which is a very simple encryption library. Currently the program uses the DES algorithm
 to encrypt communications which is generally regarded as not that secure, so I'd recommend
 changing it to a different algorithm. This should be rather simple by going into 
-classes found in the util sub project: `chat.encryption.Encryptor` and `chat.encryption.KeyGeneratorMain` 
+classes found in the util sub project: `chat.encryption.CryptoManager` and `chat.encryption.KeyGeneratorMain` 
 (Though it probably would require more than just changing the algorithm type)
 
 ### Networking
@@ -73,47 +159,13 @@ like possible rooms or user authentication. It is configured to use a library ca
 this library and you can remove it from gradle if you wish, I just wanted to make it easier by finding
 a simple library and pre-installing it to avoid you having to deal with Gradle.
 
-## Building
+## Authors
 
-### Requirements
-* [Java JDK 13](https://jdk.java.net/13/)
-* [Gradle 6.1.1](https://gradle.org/install/)
-* JavaFX 13 (Will be downloaded by Gradle)
+* Evan Fiordeliso - _Initial Work_ - [FiFiTiDo](https://github.com/FiFiTiDo)
 
-I recommend using [SDKMAN!](https://sdkman.io/) for installing and managing the JDK and Gradle versions.
-It greatly simplifies the installation process and handling different versions.
+See also the list of [contributors](https://github.com/FiFiTiDo/EncryptedChat/contributors) who participated in this project.
 
-```
-sdk install java 13.0.2.hs-adpt
-sdk install gradle 6.1.1
-```
 
-### About
+## License
 
-This project relies on gradle to make it easier to build and manage dependencies.
-Since the project is divided into multiple sub-projects, each sub-project has its
-own build directory.
-
-You need to build each sub-project individually using `./gradlew <subproject>:distZip`
-which will place a zip file with `<subproject>/build/distributions` that contains a
-start script (for both windows and linux) in the `bin` folder and the code for the 
-sub-project and all of its dependencies in the `lib` folder.
-
-To run a distribution, just extract it and run `bin/<subproject>`
-
-_Note: if `./gradlew` does not work, try using `gradle task`_
-
-### Running the program
-
-1. The Server and Client will both crash if there is no key present, to generate one
-use `./gradlew util:run`, this will generate a `SECRET_KEY` file. This file can stay
-where it is when running the clients and server in place. When using a jar, make sure
-it is in the same directory as the jar file. __The server and clients all need the same__
-__key file to be able to communicate.__
-
-2. When running the server in-place I'd recommend using your IDE's built-in run functionality
-as it can be a little bit glitchy with `./gradlew server:run`
-
-3. Same for the client though you can try to use `./gradlew client:run`
-
-You can also run the server/client by building a distribtion, see [_About_](#About) for more info.
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
