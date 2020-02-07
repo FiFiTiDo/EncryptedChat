@@ -49,7 +49,7 @@ public class ThreadedSocket extends Thread {
         try {
             String json = gson.toJson(message);
             byte[] bytes = cryptoManager.encrypt(json);
-            byte[] hmac = cryptoManager.generateHmac(json);
+            byte[] hmac = cryptoManager.generateHmac(bytes);
 
             this.os.writeInt(bytes.length);
             this.os.writeInt(hmac.length);
@@ -121,14 +121,12 @@ public class ThreadedSocket extends Thread {
 
             Message msg;
             try {
-                String decrypted = cryptoManager.decrypt(raw);
-
-                if (!cryptoManager.checkIntegrity(decrypted, hmac)) {
-                    System.out.println("Error: could not verify the integrity of the data.");
+                if (!cryptoManager.checkIntegrity(raw, hmac)) {
+                    System.out.println("Security Error: could not verify the integrity of the data.");
                     return;
                 }
 
-                msg = gson.fromJson(decrypted, Message.class);
+                msg = gson.fromJson(cryptoManager.decrypt(raw), Message.class);
             } catch (EncryptionException e) {
                 e.printStackTrace();
                 return;

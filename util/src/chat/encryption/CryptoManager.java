@@ -55,17 +55,17 @@ public class CryptoManager {
         }
     }
 
-    public byte[] generateHmac(String contents) throws EncryptionException {
+    public byte[] generateHmac(byte[] bytes) throws EncryptionException {
         try {
-            return mac.doFinal(contents.getBytes());
+            return mac.doFinal(bytes);
         } catch (Exception e) {
             throw new EncryptionException("Failed to generate hmac the data.", e);
         }
     }
 
-    public boolean checkIntegrity(String contents, byte[] hmac) throws EncryptionException {
+    public boolean checkIntegrity(byte[] bytes, byte[] hmac) throws EncryptionException {
         try {
-            return MessageDigest.isEqual(mac.doFinal(contents.getBytes()), hmac);
+            return MessageDigest.isEqual(mac.doFinal(bytes), hmac);
         } catch (Exception e) {
             throw new EncryptionException("Failed to verify integrity the data.", e);
         }
