@@ -9,18 +9,24 @@
 plugins {
     id "java"
     id "application"
+    id "distribution"
     id 'org.openjfx.javafxplugin' version '0.0.8' apply false
     id('io.ebean') version '12.1.10' apply false
 }
+
 allprojects {
     repositories {
         jcenter()
         mavenCentral()
+        maven {
+            url "http://oss.sonatype.org/content/groups/public/"
+        }
     }
+
+    sourceCompatibility = 13
+    targetCompatibility = 13
 }
 
-sourceCompatibility = 13
-targetCompatibility = 13
 
 subprojects {
     version = '0.1.2'
@@ -30,9 +36,20 @@ subprojects {
     dependencies {
         // This dependency is used by the application.
         implementation 'com.google.guava:guava:28.1-jre'
+        implementation 'org.yaml:snakeyaml:1.26-SNAPSHOT'
 
         // Use JUnit test framework
         testImplementation 'junit:junit:4.12'
+    }
+
+    distributions {
+        main {
+            contents {
+                from {
+                    'config.yml'
+                }
+            }
+        }
     }
 }
 

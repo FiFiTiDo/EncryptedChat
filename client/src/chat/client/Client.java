@@ -6,16 +6,30 @@ import chat.messages.Message;
 import chat.messages.TextMessage;
 import chat.socket.ThreadedSocket;
 import javafx.application.Platform;
+import org.yaml.snakeyaml.Yaml;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.Scanner;
 
 public class Client implements Runnable {
     private ThreadedSocket socket;
     private volatile boolean connected = false;
+    private ClientConfig config;
 
     Client() throws IOException, EncryptionException {
-        socket = new ThreadedSocket("127.0.0.1", 9000, new CryptoManager());
+        try {
+            File configFile = new File("config.yml");
+            Yaml yaml = new Yaml();
+            config = yaml.loadAs(new FileReader(configFile), ClientConfig.class);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+
+        socket = new ThreadedSocket(config.getHost(), config.getPost(), new CryptoManager());
         socket.setOnDisconnectListener(this::handleDisconnected);
         socket.setOnMessageListener(this::handleMessage);
     }

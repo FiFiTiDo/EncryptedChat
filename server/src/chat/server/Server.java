@@ -6,20 +6,32 @@ import chat.messages.Message;
 import chat.messages.TextMessage;
 import chat.socket.DisconnectedException;
 import chat.socket.ThreadedSocket;
+import org.yaml.snakeyaml.Yaml;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
 
 class Server {
-    private static final int PORT = 9000;
-
     private ServerSocket socket;
     private final List<ClientHandler> clients;
     private CryptoManager cryptoManager;
+    private ServerConfig config;
 
     Server() {
+        try {
+            File configFile = new File("config.yml");
+            Yaml yaml = new Yaml();
+            config = yaml.load(new FileReader(configFile));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+
         clients = new ArrayList<>();
         try {
             cryptoManager = new CryptoManager();
@@ -31,12 +43,12 @@ class Server {
 
     void run() throws IOException {
         try {
-            socket = new ServerSocket(PORT);
+            socket = new ServerSocket(config.getPort());
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        System.out.println("Now listening on port " + PORT);
+        System.out.println("Now listening on port " + config.getPort());
 
         Socket clientSocket = null;
         while (true) {

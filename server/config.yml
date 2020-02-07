@@ -1,0 +1,7 @@
+# Server Configuration
+port: 9000
+database:
+  username: ""
+  password: ""
+  url: ""
+  driver: ""
