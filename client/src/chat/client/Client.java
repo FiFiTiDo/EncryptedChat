@@ -1,22 +1,20 @@
 package chat.client;
 
+import chat.encryption.EncryptionException;
 import chat.encryption.Encryptor;
 import chat.messages.Message;
 import chat.messages.TextMessage;
 import chat.socket.ThreadedSocket;
 import javafx.application.Platform;
 
-import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.Scanner;
 
 public class Client implements Runnable {
     private ThreadedSocket socket;
     private volatile boolean connected = false;
 
-    Client() throws IOException, ClassNotFoundException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
+    Client() throws IOException, EncryptionException {
         socket = new ThreadedSocket("127.0.0.1", 9000, new Encryptor());
         socket.setOnDisconnectListener(this::handleDisconnected);
         socket.setOnMessageListener(this::handleMessage);

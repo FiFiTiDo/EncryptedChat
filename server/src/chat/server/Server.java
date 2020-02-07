@@ -1,17 +1,15 @@
 package chat.server;
 
+import chat.encryption.EncryptionException;
 import chat.encryption.Encryptor;
 import chat.messages.Message;
 import chat.messages.TextMessage;
 import chat.socket.DisconnectedException;
 import chat.socket.ThreadedSocket;
 
-import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 class Server {
@@ -25,7 +23,7 @@ class Server {
         clients = new ArrayList<>();
         try {
             encryptor = new Encryptor();
-        } catch (NoSuchPaddingException | InvalidKeyException | ClassNotFoundException | IOException | NoSuchAlgorithmException e) {
+        } catch (EncryptionException e) {
             e.printStackTrace();
             System.exit(1);
         }

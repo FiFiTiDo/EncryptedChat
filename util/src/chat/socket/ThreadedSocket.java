@@ -1,5 +1,6 @@
 package chat.socket;
 
+import chat.encryption.EncryptionException;
 import chat.encryption.Encryptor;
 import chat.messages.Message;
 import chat.messages.TextMessage;
@@ -61,7 +62,7 @@ public class ThreadedSocket extends Thread {
             } else {
                 e.printStackTrace();
             }
-        } catch (BadPaddingException | IllegalBlockSizeException | IOException e) {
+        } catch (EncryptionException | IOException e) {
             e.printStackTrace();
         }
     }
@@ -115,7 +116,7 @@ public class ThreadedSocket extends Thread {
             Message msg;
             try {
                 msg = gson.fromJson(encryptor.decrypt(raw), Message.class);
-            } catch (BadPaddingException | IllegalBlockSizeException e) {
+            } catch (EncryptionException e) {
                 e.printStackTrace();
                 return;
             }
