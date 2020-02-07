@@ -14,6 +14,7 @@
     * [Graphical User Interface](#Graphical-User-Interface)
     * [Database](#Database)
 * [Authors](#Authors)
+* [Contributing](#Contributing)
 * [License](#License)
 
 ## About the Project
@@ -165,6 +166,9 @@ a simple library and pre-installing it to avoid you having to deal with Gradle.
 
 See also the list of [contributors](https://github.com/FiFiTiDo/EncryptedChat/contributors) who participated in this project.
 
+## Contributing
+
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
 
 ## License
 
