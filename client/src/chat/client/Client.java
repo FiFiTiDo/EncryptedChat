@@ -75,6 +75,6 @@ public class Client implements Runnable {
             }
             System.out.println("Exiting program...");
             Platform.exit();
-        });
+        }).start();
     }
 }

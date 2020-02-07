@@ -49,9 +49,12 @@ public class ThreadedSocket extends Thread {
         try {
             String json = gson.toJson(message);
             byte[] bytes = cryptoManager.encrypt(json);
+            byte[] hmac = cryptoManager.generateHmac(json);
 
             this.os.writeInt(bytes.length);
+            this.os.writeInt(hmac.length);
             this.os.write(bytes);
+            this.os.write(hmac);
             this.os.flush();
         } catch (SocketException e) {
             if (e.getMessage().equals("Connection reset by peer: socket write error")) {
@@ -85,13 +88,18 @@ public class ThreadedSocket extends Thread {
     public void run() {
         while (!this.isInterrupted() && socket.isConnected()) {
             byte[] raw;
+            byte[] hmac;
             try {
                 int length = is.readInt(); // read length of incoming message
+                int lengthHmac = is.readInt(); // read length of incoming hmac
 
                 if (length <= 0) continue;
 
                 raw = new byte[length];
                 is.readFully(raw, 0, raw.length); // read the message
+
+                hmac = new byte[lengthHmac];
+                is.readFully(hmac, 0, hmac.length); // read the message
             } catch (SocketException e) {
                 if (e.getMessage().equals("Connection reset")) {
                     this.disconnect();
@@ -113,7 +121,14 @@ public class ThreadedSocket extends Thread {
 
             Message msg;
             try {
-                msg = gson.fromJson(cryptoManager.decrypt(raw), Message.class);
+                String decrypted = cryptoManager.decrypt(raw);
+
+                if (!cryptoManager.checkIntegrity(decrypted, hmac)) {
+                    System.out.println("Error: could not verify the integrity of the data.");
+                    return;
+                }
+
+                msg = gson.fromJson(decrypted, Message.class);
             } catch (EncryptionException e) {
                 e.printStackTrace();
                 return;
