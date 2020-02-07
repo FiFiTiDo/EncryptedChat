@@ -1,8 +1,8 @@
 package chat.client;
 
-class ClientConfig {
+public class ClientConfig {
     private String host;
-    private int post;
+    private int port;
 
     public String getHost() {
         return host;
@@ -12,11 +12,11 @@ class ClientConfig {
         this.host = host;
     }
 
-    public int getPost() {
-        return post;
+    public int getPort() {
+        return port;
     }
 
-    public void setPost(int post) {
-        this.post = post;
+    public void setPort(int port) {
+        this.port = port;
     }
 }

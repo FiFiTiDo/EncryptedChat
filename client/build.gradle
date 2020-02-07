@@ -31,7 +31,3 @@ jar {
         attributes 'Main-Class': 'chat.client.ClientMain'
     }
 }
-
-run {
-    workingDir file("../").getAbsolutePath()
-}

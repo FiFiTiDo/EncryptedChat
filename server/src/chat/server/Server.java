@@ -26,7 +26,7 @@ class Server {
         try {
             File configFile = new File("config.yml");
             Yaml yaml = new Yaml();
-            config = yaml.load(new FileReader(configFile));
+            config = yaml.loadAs(new FileReader(configFile), ServerConfig.class);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             System.exit(1);
@@ -111,7 +111,7 @@ class Server {
                         }
                         break;
                     default:
-                        client.sendMessage(client.getClientName() + "> " + msg);
+                        client.sendMessage("Unknown command: " + command);
                 }
             } else {
                 msg.putData(TextMessage.DATA_SENDER_ID, client.getClientId().toString());

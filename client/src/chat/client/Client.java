@@ -29,7 +29,7 @@ public class Client implements Runnable {
             System.exit(1);
         }
 
-        socket = new ThreadedSocket(config.getHost(), config.getPost(), new CryptoManager());
+        socket = new ThreadedSocket(config.getHost(), config.getPort(), new CryptoManager());
         socket.setOnDisconnectListener(this::handleDisconnected);
         socket.setOnMessageListener(this::handleMessage);
     }

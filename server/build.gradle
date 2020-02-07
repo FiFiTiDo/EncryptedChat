@@ -29,7 +29,3 @@ jar {
         attributes 'Main-Class': 'chat.server.ServerMain'
     }
 }
-
-run {
-    workingDir file("../").getAbsolutePath()
-}
