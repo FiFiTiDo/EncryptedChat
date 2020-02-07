@@ -1,7 +1,7 @@
 package chat.server;
 
+import chat.encryption.CryptoManager;
 import chat.encryption.EncryptionException;
-import chat.encryption.Encryptor;
 import chat.messages.Message;
 import chat.messages.TextMessage;
 import chat.socket.DisconnectedException;
@@ -17,12 +17,12 @@ class Server {
 
     private ServerSocket socket;
     private final List<ClientHandler> clients;
-    private Encryptor encryptor;
+    private CryptoManager cryptoManager;
 
     Server() {
         clients = new ArrayList<>();
         try {
-            encryptor = new Encryptor();
+            cryptoManager = new CryptoManager();
         } catch (EncryptionException e) {
             e.printStackTrace();
             System.exit(1);
@@ -49,7 +49,7 @@ class Server {
             if (clientSocket == null) continue;
 
             UUID clientId = UUID.randomUUID();
-            ClientHandler client = new ClientHandler(clientId, clientSocket, encryptor);
+            ClientHandler client = new ClientHandler(clientId, clientSocket, cryptoManager);
             clients.add(client);
             client.setOnMessageListener(this::handleMessage);
             client.setOnDisconnectListener(this::handleClientDisconnect);

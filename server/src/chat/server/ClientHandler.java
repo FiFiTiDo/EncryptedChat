@@ -1,24 +1,18 @@
 package chat.server;
 
-import chat.encryption.Encryptor;
+import chat.encryption.CryptoManager;
 import chat.socket.ThreadedSocket;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.UUID;
 
 class ClientHandler extends ThreadedSocket {
     private final UUID id;
     private String name;
 
-    public ClientHandler(UUID id, Socket socket, Encryptor encryptor) throws IOException {
-        super(socket, encryptor);
+    public ClientHandler(UUID id, Socket socket, CryptoManager cryptoManager) throws IOException {
+        super(socket, cryptoManager);
 
         this.id = id;
         this.name = id.toString();

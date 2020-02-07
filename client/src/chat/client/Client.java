@@ -1,7 +1,7 @@
 package chat.client;
 
+import chat.encryption.CryptoManager;
 import chat.encryption.EncryptionException;
-import chat.encryption.Encryptor;
 import chat.messages.Message;
 import chat.messages.TextMessage;
 import chat.socket.ThreadedSocket;
@@ -15,7 +15,7 @@ public class Client implements Runnable {
     private volatile boolean connected = false;
 
     Client() throws IOException, EncryptionException {
-        socket = new ThreadedSocket("127.0.0.1", 9000, new Encryptor());
+        socket = new ThreadedSocket("127.0.0.1", 9000, new CryptoManager());
         socket.setOnDisconnectListener(this::handleDisconnected);
         socket.setOnMessageListener(this::handleMessage);
     }

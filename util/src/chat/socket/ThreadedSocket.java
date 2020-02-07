@@ -1,13 +1,11 @@
 package chat.socket;
 
+import chat.encryption.CryptoManager;
 import chat.encryption.EncryptionException;
-import chat.encryption.Encryptor;
 import chat.messages.Message;
 import chat.messages.TextMessage;
 import com.google.gson.Gson;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
@@ -20,22 +18,22 @@ public class ThreadedSocket extends Thread {
     private DataInputStream is;
     private volatile DataOutputStream os;
 
-    private Encryptor encryptor;
+    private CryptoManager cryptoManager;
 
     private OnMessageListener onMessageListener;
     private OnDisconnectListener onDisconnectListener;
 
     private volatile Gson gson;
 
-    public ThreadedSocket(String host, int port, Encryptor encryptor) throws IOException {
-        this(new Socket(host, port), encryptor);
+    public ThreadedSocket(String host, int port, CryptoManager cryptoManager) throws IOException {
+        this(new Socket(host, port), cryptoManager);
     }
 
-    public ThreadedSocket(Socket socket, Encryptor encryptor) throws IOException {
+    public ThreadedSocket(Socket socket, CryptoManager cryptoManager) throws IOException {
         this.socket = socket;
         this.is = new DataInputStream(socket.getInputStream());
         this.os = new DataOutputStream(socket.getOutputStream());
-        this.encryptor = encryptor;
+        this.cryptoManager = cryptoManager;
         this.gson = new Gson();
     }
 
@@ -50,7 +48,7 @@ public class ThreadedSocket extends Thread {
     public void sendMessageUnsafe(Message message) throws DisconnectedException {
         try {
             String json = gson.toJson(message);
-            byte[] bytes = encryptor.encrypt(json);
+            byte[] bytes = cryptoManager.encrypt(json);
 
             this.os.writeInt(bytes.length);
             this.os.write(bytes);
@@ -115,7 +113,7 @@ public class ThreadedSocket extends Thread {
 
             Message msg;
             try {
-                msg = gson.fromJson(encryptor.decrypt(raw), Message.class);
+                msg = gson.fromJson(cryptoManager.decrypt(raw), Message.class);
             } catch (EncryptionException e) {
                 e.printStackTrace();
                 return;
