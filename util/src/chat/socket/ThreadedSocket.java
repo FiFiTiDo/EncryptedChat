@@ -7,6 +7,7 @@ import chat.messages.PingMessage;
 import chat.messages.TextMessage;
 import com.google.gson.Gson;
 
+import javax.crypto.CipherOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
@@ -14,8 +15,11 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.*;
 
 /**
  * The ThreadedSocket class.
@@ -30,15 +34,15 @@ import java.util.TimerTask;
 public class ThreadedSocket extends Thread {
     private final Socket socket;
     private DataInputStream is;
-    private volatile DataOutputStream os;
+    private DataOutputStream os;
 
     private CryptoManager cryptoManager;
 
     private OnMessageListener onMessageListener;
     private OnDisconnectListener onDisconnectListener;
 
-    private volatile Gson gson;
-    private Timer timer;
+    private Gson gson;
+    private Thread heartbeatThread;
 
     /**
      * The ThreadedSocket constructor.
@@ -68,8 +72,8 @@ public class ThreadedSocket extends Thread {
         this.cryptoManager = cryptoManager;
         this.gson = new Gson();
 
-        timer = new Timer();
-        timer.scheduleAtFixedRate(new HeartbeatTask(this), 0, 30 * 1000);
+        heartbeatThread = new Thread(this::sendHeartbeat);
+        heartbeatThread.start();
     }
 
     /**
@@ -90,16 +94,14 @@ public class ThreadedSocket extends Thread {
         this.onDisconnectListener = onDisconnectListener;
     }
 
+
     /**
-     * Send a message without handling a disconnection
-     *
-     * Only use when you're iterating over the clients and don't want the
-     * on disconnect listener to run.
+     * Send a message and notifies the specified listener rather than the object's set listener
      *
      * @param message The message to send through the socket
-     * @throws DisconnectedException The socket was disconnected.
+     * @param listener An OnDisconnectListener
      */
-    public void sendMessageUnsafe(Message message) throws DisconnectedException {
+    public synchronized void sendMessage(Message message, OnDisconnectListener listener) {
         try {
             String json = gson.toJson(message);
             byte[] bytes = cryptoManager.encrypt(json);
@@ -111,28 +113,15 @@ public class ThreadedSocket extends Thread {
             this.os.write(hmac);
             this.os.flush();
         } catch (SocketException e) {
-            if (e.getMessage().equals("Connection reset by peer: socket write error")) {
+            if (e.getMessage().equals("Connection reset by peer: socket write error") || e.getMessage().equals("Socket closed")) {
                 this.disconnect();
-                throw new DisconnectedException();
+                listener.onDisconnect(this);
             } else {
                 e.printStackTrace();
             }
         } catch (EncryptionException | IOException e) {
             e.printStackTrace();
         }
-    }
-
-    /**
-     * Send a message without handling a disconnection
-     *
-     * Makes it easier to send a TextMessage
-     *
-     * @see ThreadedSocket#sendMessageUnsafe(Message)
-     * @param message The message to send
-     * @throws DisconnectedException The socket was disconnected.
-     */
-    public void sendMessageUnsafe(String message) throws DisconnectedException {
-        sendMessageUnsafe(TextMessage.make(message));
     }
 
     /**
@@ -144,11 +133,7 @@ public class ThreadedSocket extends Thread {
      * @param message The message to send
      */
     public void sendMessage(Message message) {
-        try {
-            sendMessageUnsafe(message);
-        } catch (DisconnectedException e) {
-            this.onDisconnectListener.onDisconnect(this);
-        }
+        this.sendMessage(message, this.onDisconnectListener);
     }
 
     /**
@@ -175,64 +160,54 @@ public class ThreadedSocket extends Thread {
                 int length = is.readInt(); // read length of incoming message
                 int lengthHmac = is.readInt(); // read length of incoming hmac
 
-                if (length <= 0) continue;
-
                 raw = new byte[length];
                 is.readFully(raw, 0, raw.length); // read the message
 
                 hmac = new byte[lengthHmac];
                 is.readFully(hmac, 0, hmac.length); // read the message
             } catch (SocketTimeoutException | EOFException | NullPointerException e) {
-                this.disconnect();
-                this.onDisconnectListener.onDisconnect(this);
-                return;
+                break;
             } catch (SocketException e) {
                 // Socket disconnected
-                if (e.getMessage().equals("Connection reset") || e.getMessage().equals("Socket closed")) {
-                    this.disconnect();
-                    this.onDisconnectListener.onDisconnect(this);
-                    return;
-                }
+                if (e.getMessage().equals("Connection reset") || e.getMessage().equals("Socket closed"))
+                    break;
 
                 // Other SocketException type
                 e.printStackTrace();
-                return;
+                break;
             } catch (IOException e) {
                 e.printStackTrace();
-                return;
+                break;
             }
 
             Message msg;
             try {
                 if (!cryptoManager.checkIntegrity(raw, hmac)) {
                     System.out.println("Security Error: could not verify the integrity of the data.");
-                    return;
+                    continue;
                 }
 
                 msg = gson.fromJson(cryptoManager.decrypt(raw), Message.class);
             } catch (EncryptionException e) {
                 e.printStackTrace();
-                return;
+                break;
             }
             this.onMessageListener.onMessage(msg, this);
         }
+
+        this.disconnect();
+        this.onDisconnectListener.onDisconnect(this);
     }
 
     /**
-     * HeartbeatTask class.
-     *
-     * A timer task to send a ping message to ensure connection.
+     * Thread runnable for sending a pong message
      */
-    private class HeartbeatTask extends TimerTask {
-        private ThreadedSocket socket;
-
-        HeartbeatTask(ThreadedSocket socket) {
-            this.socket = socket;
-        }
-
-        @Override
-        public void run() {
-            socket.sendMessage(new PingMessage());
+    private void sendHeartbeat() {
+        while (true) {
+            sendMessage(new PingMessage());
+            try {
+                TimeUnit.SECONDS.sleep(20);
+            } catch (InterruptedException e) { break; }
         }
     }
 
@@ -244,7 +219,7 @@ public class ThreadedSocket extends Thread {
             this.socket.close();
             this.is = null;
             this.os = null;
-            this.timer.cancel();
+            this.heartbeatThread.interrupt();
         } catch (IOException e) {
             e.printStackTrace();
         }

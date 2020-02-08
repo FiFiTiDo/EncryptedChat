@@ -20,6 +20,7 @@ public class Client implements Runnable {
     private ThreadedSocket socket;
     private volatile boolean connected = false;
     private ClientConfig config;
+    private Thread consoleThread = null;
 
     Client() throws IOException, EncryptionException {
         try {
@@ -57,13 +58,14 @@ public class Client implements Runnable {
     public void disconnect() {
         this.connected = false;
         socket.disconnect();
+        System.exit(1); // Force the console reading thread to stop
     }
 
     @Override
     public void run() {
         socket.start();
 
-        new Thread(() -> {
+        consoleThread = new Thread(() -> {
             connected = true;
 
             Scanner scanner = new Scanner(System.in);
@@ -78,7 +80,8 @@ public class Client implements Runnable {
                 }
             }
             System.out.println("Exiting program...");
-            Platform.exit();
-        }).start();
+            System.exit(1);
+        });
+        consoleThread.start();
     }
 }

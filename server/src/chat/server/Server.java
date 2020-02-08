@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
@@ -73,6 +74,9 @@ public class Server {
     void run() throws IOException {
         try {
             socket = new ServerSocket(config.getPort());
+        } catch (BindException e) {
+            System.out.println("Failed to bind on port " + config.getPort() + " as it is already in use.");
+            return;
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -151,13 +155,11 @@ public class Server {
             msg.putData(TextMessage.DATA_SENDER_NAME, client.getClientName());
             for (Iterator<ClientHandler> iter = this.clients.iterator(); iter.hasNext(); ) {
                 ClientHandler other = iter.next();
-                if (other.getClientId() != client.getClientId()) {
-                    try {
-                        other.sendMessageUnsafe(msg);
-                    } catch (DisconnectedException e) {
+                if (other.getClientId() != client.getClientId())
+                    other.sendMessage(msg, socket -> {
                         iter.remove();
-                    }
-                }
+                        System.out.println(String.format("Client %s has disconnected.", client.getClientId()));
+                    });
             }
         }
     }
@@ -178,13 +180,13 @@ public class Server {
      * @param msg The message to broadcast
      */
     public void broadcast(String msg) {
+        Message message = TextMessage.make(msg);
         for (Iterator<ClientHandler> iter = this.clients.iterator(); iter.hasNext(); ) {
             ClientHandler client = iter.next();
-            try {
-                client.sendMessageUnsafe(msg);
-            } catch (DisconnectedException e) {
+            client.sendMessage(message, socket -> {
                 iter.remove();
-            }
+                System.out.println(String.format("Client %s has disconnected.", client.getClientId()));
+            });
         }
     }
 
@@ -209,5 +211,6 @@ public class Server {
         if (!(socket instanceof ClientHandler)) return;
         ClientHandler client = (ClientHandler) socket;
         clients.remove(client);
+        System.out.println(String.format("Client %s has disconnected.", client.getClientId()));
     }
 }
