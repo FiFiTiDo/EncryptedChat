@@ -42,7 +42,7 @@ public class ThreadedSocket extends Thread {
     private OnDisconnectListener onDisconnectListener;
 
     private Gson gson;
-    private Thread heartbeatThread;
+    private Timer timer;
 
     /**
      * The ThreadedSocket constructor.
@@ -72,8 +72,14 @@ public class ThreadedSocket extends Thread {
         this.cryptoManager = cryptoManager;
         this.gson = new Gson();
 
-        heartbeatThread = new Thread(this::sendHeartbeat);
-        heartbeatThread.start();
+        // Send a PING message periodically to verify socket is still connected
+        timer = new Timer();
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                sendMessage(new PingMessage());
+            }
+        }, 10 * 1000, 30 * 1000);
     }
 
     /**
@@ -200,18 +206,6 @@ public class ThreadedSocket extends Thread {
     }
 
     /**
-     * Thread runnable for sending a pong message
-     */
-    private void sendHeartbeat() {
-        while (true) {
-            sendMessage(new PingMessage());
-            try {
-                TimeUnit.SECONDS.sleep(20);
-            } catch (InterruptedException e) { break; }
-        }
-    }
-
-    /**
      * Disconnect the socket connection
      */
     public void disconnect() {
@@ -219,7 +213,7 @@ public class ThreadedSocket extends Thread {
             this.socket.close();
             this.is = null;
             this.os = null;
-            this.heartbeatThread.interrupt();
+            this.timer.cancel();
         } catch (IOException e) {
             e.printStackTrace();
         }
