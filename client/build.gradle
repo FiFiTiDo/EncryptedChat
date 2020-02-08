@@ -31,3 +31,7 @@ jar {
         attributes 'Main-Class': 'chat.client.ClientMain'
     }
 }
+
+test {
+    useJUnitPlatform()
+}

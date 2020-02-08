@@ -34,7 +34,7 @@ class Server {
 
         clients = new ArrayList<>();
         try {
-            cryptoManager = new CryptoManager();
+            cryptoManager = CryptoManager.loadFromFile();
         } catch (EncryptionException e) {
             e.printStackTrace();
             System.exit(1);
