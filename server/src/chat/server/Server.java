@@ -53,7 +53,7 @@ public class Server {
 
         clients = new ArrayList<>();
         try {
-            cryptoManager = CryptoManager.loadFromFile();
+            cryptoManager = CryptoManager.loadFromFile(config.getKeyFile());
         } catch (EncryptionException e) {
             e.printStackTrace();
             System.exit(1);

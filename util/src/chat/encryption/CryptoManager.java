@@ -130,8 +130,8 @@ public class CryptoManager {
      * @throws EncryptionException Throws when it is unable to read the keys from the file or
      *      the constructor threw an exception.
      */
-    public static CryptoManager loadFromFile() throws EncryptionException {
-        File keyFile = new File("SECRET_KEY");
+    public static CryptoManager loadFromFile(String path) throws EncryptionException {
+        File keyFile = new File(path);
         if (!keyFile.exists())
             throw new EncryptionException("Key file does not exist, run the util jar to create a key file.");
 

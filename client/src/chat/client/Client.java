@@ -7,7 +7,6 @@ import chat.messages.PingMessage;
 import chat.messages.PongMessage;
 import chat.messages.TextMessage;
 import chat.socket.ThreadedSocket;
-import javafx.application.Platform;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
@@ -20,7 +19,6 @@ public class Client implements Runnable {
     private ThreadedSocket socket;
     private volatile boolean connected = false;
     private ClientConfig config;
-    private Thread consoleThread = null;
 
     Client() throws IOException, EncryptionException {
         try {
@@ -32,7 +30,7 @@ public class Client implements Runnable {
             System.exit(1);
         }
 
-        socket = new ThreadedSocket(config.getHost(), config.getPort(), CryptoManager.loadFromFile());
+        socket = new ThreadedSocket(config.getHost(), config.getPort(), CryptoManager.loadFromFile(config.getKeyFile()));
         socket.setOnDisconnectListener(this::handleDisconnected);
         socket.setOnMessageListener(this::handleMessage);
     }
@@ -65,7 +63,7 @@ public class Client implements Runnable {
     public void run() {
         socket.start();
 
-        consoleThread = new Thread(() -> {
+        new Thread(() -> {
             connected = true;
 
             Scanner scanner = new Scanner(System.in);
@@ -81,7 +79,6 @@ public class Client implements Runnable {
             }
             System.out.println("Exiting program...");
             System.exit(1);
-        });
-        consoleThread.start();
+        }).start();
     }
 }
