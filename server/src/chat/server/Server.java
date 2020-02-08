@@ -3,6 +3,8 @@ package chat.server;
 import chat.encryption.CryptoManager;
 import chat.encryption.EncryptionException;
 import chat.messages.Message;
+import chat.messages.PingMessage;
+import chat.messages.PongMessage;
 import chat.messages.TextMessage;
 import chat.server.commands.CommandExecutor;
 import chat.socket.DisconnectedException;
@@ -117,6 +119,9 @@ public class Server {
             case TextMessage.COMMAND:
                 handleTextMessage(msg, client);
                 break;
+            case PingMessage.COMMAND:
+                handlePingMessage(msg, client);
+                break;
         }
     }
 
@@ -155,6 +160,16 @@ public class Server {
                 }
             }
         }
+    }
+
+    /**
+     * Responds to a ping message with a pong message
+     *
+     * @param msg The message from the client
+     * @param client The client that sent the message
+     */
+    private void handlePingMessage(Message msg, ClientHandler client) {
+        client.sendMessage(new PongMessage());
     }
 
     /**

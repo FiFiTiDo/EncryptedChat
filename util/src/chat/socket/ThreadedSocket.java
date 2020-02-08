@@ -3,6 +3,7 @@ package chat.socket;
 import chat.encryption.CryptoManager;
 import chat.encryption.EncryptionException;
 import chat.messages.Message;
+import chat.messages.PingMessage;
 import chat.messages.TextMessage;
 import com.google.gson.Gson;
 
@@ -12,6 +13,9 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * The ThreadedSocket class.
@@ -34,6 +38,7 @@ public class ThreadedSocket extends Thread {
     private OnDisconnectListener onDisconnectListener;
 
     private volatile Gson gson;
+    private Timer timer;
 
     /**
      * The ThreadedSocket constructor.
@@ -62,6 +67,9 @@ public class ThreadedSocket extends Thread {
         this.os = new DataOutputStream(socket.getOutputStream());
         this.cryptoManager = cryptoManager;
         this.gson = new Gson();
+
+        timer = new Timer();
+        timer.scheduleAtFixedRate(new HeartbeatTask(this), 0, 30 * 1000);
     }
 
     /**
@@ -174,19 +182,20 @@ public class ThreadedSocket extends Thread {
 
                 hmac = new byte[lengthHmac];
                 is.readFully(hmac, 0, hmac.length); // read the message
-            } catch (SocketException e) {
-                if (e.getMessage().equals("Connection reset")) { // Socket disconnected
-                    this.disconnect();
-                    this.onDisconnectListener.onDisconnect(this);
-                } else if (e.getMessage().equals("Socket closed")) { // Socket disconnected
-                    this.onDisconnectListener.onDisconnect(this);
-                } else { // Other SocketException type
-                    e.printStackTrace();
-                }
-                return;
-            } catch (EOFException | NullPointerException e) { // Socket disconnected
+            } catch (SocketTimeoutException | EOFException | NullPointerException e) {
                 this.disconnect();
                 this.onDisconnectListener.onDisconnect(this);
+                return;
+            } catch (SocketException e) {
+                // Socket disconnected
+                if (e.getMessage().equals("Connection reset") || e.getMessage().equals("Socket closed")) {
+                    this.disconnect();
+                    this.onDisconnectListener.onDisconnect(this);
+                    return;
+                }
+
+                // Other SocketException type
+                e.printStackTrace();
                 return;
             } catch (IOException e) {
                 e.printStackTrace();
@@ -210,6 +219,24 @@ public class ThreadedSocket extends Thread {
     }
 
     /**
+     * HeartbeatTask class.
+     *
+     * A timer task to send a ping message to ensure connection.
+     */
+    private class HeartbeatTask extends TimerTask {
+        private ThreadedSocket socket;
+
+        HeartbeatTask(ThreadedSocket socket) {
+            this.socket = socket;
+        }
+
+        @Override
+        public void run() {
+            socket.sendMessage(new PingMessage());
+        }
+    }
+
+    /**
      * Disconnect the socket connection
      */
     public void disconnect() {
@@ -217,6 +244,7 @@ public class ThreadedSocket extends Thread {
             this.socket.close();
             this.is = null;
             this.os = null;
+            this.timer.cancel();
         } catch (IOException e) {
             e.printStackTrace();
         }

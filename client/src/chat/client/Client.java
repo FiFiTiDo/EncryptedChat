@@ -3,6 +3,8 @@ package chat.client;
 import chat.encryption.CryptoManager;
 import chat.encryption.EncryptionException;
 import chat.messages.Message;
+import chat.messages.PingMessage;
+import chat.messages.PongMessage;
 import chat.messages.TextMessage;
 import chat.socket.ThreadedSocket;
 import javafx.application.Platform;
@@ -47,6 +49,8 @@ public class Client implements Runnable {
             } else {
                 System.out.println(sender + "> " + raw);
             }
+        } else if (message.getCommand().equals(PingMessage.COMMAND)) {
+            socket.sendMessage(new PongMessage());
         }
     }
 
