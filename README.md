@@ -75,7 +75,7 @@ The libraries are contained in the `lib` directory.
 
 To compile a distribution zip:
 * On Windows `gradlew <subproject>:distZip`
-* Onm Linux `./gradlew <subproject>:distZip`
+* On Linux `./gradlew <subproject>:distZip`
 
 You can find the zip file in the sub-project's build directory `<subproject>/build/distributions`
 <br>
