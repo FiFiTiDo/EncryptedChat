@@ -5,7 +5,6 @@ import chat.encryption.EncryptionException;
 import chat.messages.Message;
 import chat.messages.TextMessage;
 import chat.socket.ThreadedSocket;
-import javafx.application.Platform;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
@@ -29,7 +28,7 @@ public class Client implements Runnable {
             System.exit(1);
         }
 
-        socket = new ThreadedSocket(config.getHost(), config.getPost(), new CryptoManager());
+        socket = new ThreadedSocket(config.getHost(), config.getPort(), CryptoManager.loadFromFile(config.getKeyFile()));
         socket.setOnDisconnectListener(this::handleDisconnected);
         socket.setOnMessageListener(this::handleMessage);
     }
@@ -53,6 +52,7 @@ public class Client implements Runnable {
     public void disconnect() {
         this.connected = false;
         socket.disconnect();
+        System.exit(1); // Force the console reading thread to stop
     }
 
     @Override
@@ -74,7 +74,7 @@ public class Client implements Runnable {
                 }
             }
             System.out.println("Exiting program...");
-            Platform.exit();
-        });
+            System.exit(1);
+        }).start();
     }
 }

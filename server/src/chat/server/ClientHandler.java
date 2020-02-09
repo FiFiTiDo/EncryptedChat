@@ -7,11 +7,11 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.UUID;
 
-class ClientHandler extends ThreadedSocket {
+public class ClientHandler extends ThreadedSocket {
     private final UUID id;
     private String name;
 
-    public ClientHandler(UUID id, Socket socket, CryptoManager cryptoManager) throws IOException {
+    ClientHandler(UUID id, Socket socket, CryptoManager cryptoManager) throws IOException {
         super(socket, cryptoManager);
 
         this.id = id;

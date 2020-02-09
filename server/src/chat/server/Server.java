@@ -4,7 +4,7 @@ import chat.encryption.CryptoManager;
 import chat.encryption.EncryptionException;
 import chat.messages.Message;
 import chat.messages.TextMessage;
-import chat.socket.DisconnectedException;
+import chat.server.commands.CommandExecutor;
 import chat.socket.ThreadedSocket;
 import org.yaml.snakeyaml.Yaml;
 
@@ -12,21 +12,37 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
 
-class Server {
+/**
+ * The Server class.
+ *
+ * Handles all the operations of the server aspect of the chat system including:
+ *     - Messages
+ *     - Commands
+ *     - Accepting connections
+ *     - etc.
+ */
+public class Server {
     private final List<ClientHandler> clients;
     private ServerSocket socket;
     private CryptoManager cryptoManager;
     private ServerConfig config;
+    private CommandExecutor commandExecutor;
 
+    /**
+     * The constructor of the Server class
+     *
+     * Loads the configuration file, sets up the crypto manager, and sets up the command executor
+     */
     Server() {
         try {
             File configFile = new File("config.yml");
             Yaml yaml = new Yaml();
-            config = yaml.load(new FileReader(configFile));
+            config = yaml.loadAs(new FileReader(configFile), ServerConfig.class);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             System.exit(1);
@@ -34,28 +50,43 @@ class Server {
 
         clients = new ArrayList<>();
         try {
-            cryptoManager = new CryptoManager();
+            cryptoManager = CryptoManager.loadFromFile(config.getKeyFile());
         } catch (EncryptionException e) {
             e.printStackTrace();
             System.exit(1);
         }
+
+        this.commandExecutor = new CommandExecutor(this);
     }
 
+    /**
+     * The main loop of the server.
+     *
+     * This method accepts connections with clients and starts a
+     * worker thread to handle receiving data from the connection.
+     * Also sends a welcome message to the client when they connect.
+     *
+     * @throws IOException Throws when trying to instantiate a ClientHandler instance
+     */
     void run() throws IOException {
         try {
             socket = new ServerSocket(config.getPort());
+        } catch (BindException e) {
+            System.out.println("Failed to bind on port " + config.getPort() + " as it is already in use.");
+            return;
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         System.out.println("Now listening on port " + config.getPort());
 
-        Socket clientSocket = null;
+        Socket clientSocket;
         while (true) {
             try {
                 clientSocket = socket.accept();
             } catch (IOException e) {
                 System.out.println("I/O error: " + e);
+                continue;
             }
 
             if (clientSocket == null) continue;
@@ -72,78 +103,98 @@ class Server {
         }
     }
 
+    /**
+     * Handles messages set from the client
+     *
+     * This method only accepts ClientHandler instances for the second parameter and will
+     * just return immediately if it is not a ClientHandler.
+     *
+     * @param msg The message the client sent
+     * @param socket The client that sent the message (as a ThreadedSocket)
+     */
     private void handleMessage(Message msg, ThreadedSocket socket) {
         if (!(socket instanceof ClientHandler)) return;
         ClientHandler client = (ClientHandler) socket;
 
-        if (msg.getCommand().equals(TextMessage.COMMAND)) {
-            String raw = msg.getData(TextMessage.DATA_RAW_TEXT);
-            System.out.println(client.getClientName() + "> " + raw);
-            if (raw.startsWith("/")) {
-                // Handle commands
+        switch (msg.getCommand()) {
+            case TextMessage.COMMAND:
+                handleTextMessage(msg, client);
+                break;
+        }
+    }
 
-                String[] parts = raw.split(" ");
-                String command = parts[0].toLowerCase().substring(1);
-                String[] args = Arrays.copyOfRange(parts, 1, parts.length);
+    /**
+     * Handles TextMessage messages.
+     *
+     * All messages starting with a forward slash are considered commands otherwise the server
+     * just attaches the sender's id and name and forwards the message to the other clients.
+     *
+     * @param msg The message from the client
+     * @param client The client that sent the message
+     */
+    private void handleTextMessage(Message msg, ClientHandler client) {
+        String raw = msg.getData(TextMessage.DATA_RAW_TEXT);
+        System.out.println(client.getClientName() + "> " + raw);
+        if (raw.startsWith("/")) {
+            // Handle commands
+            String[] parts = raw.split(" ");
+            String command = parts[0].toLowerCase().substring(1);
+            String[] args = Arrays.copyOfRange(parts, 1, parts.length);
 
-                switch (command) {
-                    case "quit":
-                        client.disconnect();
-                        break;
-                    case "nick":
-                        if (args.length < 1) {
-                            client.sendMessage("Missing argument name, usage: /nick <name>");
-                        } else {
-                            boolean matches = false;
-                            String nickname = args[0];
-                            for (ClientHandler other : clients) {
-                                if (other.getClientName().equalsIgnoreCase(nickname)) {
-                                    client.sendMessage("That nickname is already in use.");
-                                    matches = true;
-                                    break;
-                                }
-                            }
-                            if (!matches) {
-                                String oldName = client.getClientName();
-                                client.setClientName(nickname);
-                                broadcast(oldName + " is now known as " + nickname);
-                            }
-                        }
-                        break;
-                    default:
-                        client.sendMessage(client.getClientName() + "> " + msg);
-                }
-            } else {
-                msg.putData(TextMessage.DATA_SENDER_ID, client.getClientId().toString());
-                msg.putData(TextMessage.DATA_SENDER_NAME, client.getClientName());
-                for (Iterator<ClientHandler> iter = this.clients.iterator(); iter.hasNext(); ) {
-                    ClientHandler other = iter.next();
-                    if (other.getClientId() != client.getClientId()) {
-                        try {
-                            other.sendMessageUnsafe(msg);
-                        } catch (DisconnectedException e) {
-                            iter.remove();
-                        }
-                    }
-                }
+            if (!commandExecutor.execute(command, args, msg, client))
+                client.sendMessage("Unknown command: " + command);
+        } else {
+            // Regular message
+            msg.putData(TextMessage.DATA_SENDER_ID, client.getClientId().toString());
+            msg.putData(TextMessage.DATA_SENDER_NAME, client.getClientName());
+            for (Iterator<ClientHandler> iter = this.clients.iterator(); iter.hasNext(); ) {
+                ClientHandler other = iter.next();
+                if (other.getClientId() != client.getClientId())
+                    other.sendMessage(msg, socket -> {
+                        iter.remove();
+                        System.out.println(String.format("Client %s has disconnected.", client.getClientId()));
+                    });
             }
         }
     }
 
-    private void broadcast(String msg) {
+    /**
+     * Broadcast a message to all clients connected to the server
+     *
+     * @param msg The message to broadcast
+     */
+    public void broadcast(String msg) {
+        Message message = TextMessage.make(msg);
         for (Iterator<ClientHandler> iter = this.clients.iterator(); iter.hasNext(); ) {
             ClientHandler client = iter.next();
-            try {
-                client.sendMessageUnsafe(msg);
-            } catch (DisconnectedException e) {
+            client.sendMessage(message, socket -> {
                 iter.remove();
-            }
+                System.out.println(String.format("Client %s has disconnected.", client.getClientId()));
+            });
         }
     }
 
+    /**
+     * Get the list of currently connected clients
+     *
+     * @return A list of connected clients
+     */
+    public List<ClientHandler> getConnectedClients() {
+        return clients;
+    }
+
+    /**
+     * Handles a client disconnecting from the server
+     *
+     * This method only accepts ClientHandler instances for the second parameter and will
+     * just return immediately if it is not a ClientHandler.
+     *
+     * @param socket The client that disconnected (as a ThreadedSocket)
+     */
     private void handleClientDisconnect(ThreadedSocket socket) {
         if (!(socket instanceof ClientHandler)) return;
         ClientHandler client = (ClientHandler) socket;
         clients.remove(client);
+        System.out.println(String.format("Client %s has disconnected.", client.getClientId()));
     }
 }

@@ -30,6 +30,6 @@ jar {
     }
 }
 
-run {
-    workingDir file("../").getAbsolutePath()
+test {
+    useJUnitPlatform()
 }
